@@ -1,0 +1,2463 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ML Learning Lab: Interactive Educational Visualizations for KNN Classification, KNN Regression, and K-Means Clustering" />
+  <title>ML Learning Lab — Interactive Educational Visualizations</title>
+
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <style>
+    :root {
+      /* Editorial Light Palette */
+      --bg: #fafafc;
+      --surface: #ffffff;
+      --surface-subtle: #f4f5f8;
+      --surface-elevated: #ffffff;
+      --surface-code: #f1f3f7;
+      --text: #111317;
+      --text-secondary: #47505e;
+      --muted: #737d8c;
+      --line: #e5e8ec;
+      --line-strong: #cfd4dc;
+      --line-subtle: rgba(17, 19, 23, 0.06);
+
+      /* Semantic Algorithm Accents (Restrained usage) */
+      --accent-knn: #2563eb;
+      --accent-knn-tint: #eff6ff;
+      --accent-reg: #16a34a;
+      --accent-reg-tint: #f0fdf4;
+      --accent-km: #7c3aed;
+      --accent-km-tint: #f5f3ff;
+      --accent-amber: #d97706;
+
+      --blue: #2563eb;
+      --green: #16a34a;
+      --purple: #7c3aed;
+
+      /* Restrained Border Radii */
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+
+      /* Layout Dimensions */
+      --max-width: 1200px;
+      --masthead-height: 64px;
+    }
+
+    html[data-theme="dark"] {
+      --bg: #0b0d11;
+      --surface: #12151c;
+      --surface-subtle: #171b24;
+      --surface-elevated: #1a1e28;
+      --surface-code: #1f2430;
+      --text: #f3f5f9;
+      --text-secondary: #a8b2c2;
+      --muted: #7e899b;
+      --line: #222733;
+      --line-strong: #333a4a;
+      --line-subtle: rgba(255, 255, 255, 0.05);
+
+      --accent-knn: #3b82f6;
+      --accent-knn-tint: rgba(59, 130, 246, 0.12);
+      --accent-reg: #22c55e;
+      --accent-reg-tint: rgba(34, 197, 94, 0.12);
+      --accent-km: #a855f7;
+      --accent-km-tint: rgba(168, 85, 247, 0.12);
+      --accent-amber: #f59e0b;
+
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --purple: #a855f7;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", "Sarabun", sans-serif;
+      line-height: 1.68;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ---------- Editorial Masthead ---------- */
+    .masthead {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--masthead-height);
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .masthead-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      height: 100%;
+      padding: 0 clamp(18px, 4vw, 36px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .masthead-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .masthead-mark {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--text);
+      color: var(--bg);
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 13px;
+      letter-spacing: -0.02em;
+    }
+    .masthead-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .masthead-kicker {
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: 8px;
+      padding-left: 8px;
+      border-left: 1px solid var(--line);
+    }
+    .masthead-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .masthead-nav a {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      transition: color .15s ease, background .15s ease;
+    }
+    .masthead-nav a:hover, .masthead-nav a.active {
+      color: var(--text);
+      background: var(--surface-subtle);
+    }
+    .masthead-nav .nav-num {
+      font-size: 10px;
+      color: var(--muted);
+      margin-right: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .masthead-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .icon-btn {
+      width: 36px; height: 36px;
+      display: grid; place-items: center;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 8px;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    .icon-btn:hover { border-color: var(--line-strong); }
+    .mobile-menu-btn { display: none; }
+
+    /* Mobile Drawer */
+    .drawer-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    .mobile-drawer {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      z-index: 100;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-102%);
+      transition: transform .22s ease;
+    }
+    body.menu-open .mobile-drawer { transform: translateX(0); }
+    body.menu-open .drawer-backdrop { display: block; opacity: 1; pointer-events: auto; }
+
+    /* Main Container */
+    .page-container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 clamp(18px, 4vw, 36px);
+    }
+
+    /* ---------- Hero Section (Editorial Essay Style) ---------- */
+    .editorial-hero {
+      position: relative;
+      padding: clamp(48px, 8vw, 84px) 0 clamp(36px, 6vw, 56px);
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .hero-motion {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: .6;
+    }
+    .knn-link {
+      position: absolute;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(37,99,235,.22), transparent);
+      transform-origin: left center;
+      animation: linkGlow 4.8s ease-in-out infinite;
+    }
+    .knn-link.alt { animation-delay: 1.1s; }
+    .knn-link.alt-2 { animation-delay: 2.1s; }
+    .knn-link.alt-3 { animation-delay: 2.8s; }
+    .knn-link.l1 { width: 180px; right: 180px; top: 80px; transform: rotate(18deg); }
+    .knn-link.l2 { width: 140px; right: 80px; top: 160px; transform: rotate(-14deg); }
+    .knn-link.l3 { width: 210px; right: 140px; top: 240px; transform: rotate(-26deg); }
+    .knn-link.l4 { width: 160px; right: 260px; top: 180px; transform: rotate(135deg); opacity: .4; }
+    .knn-link.l5 { width: 150px; right: 60px; top: 110px; transform: rotate(195deg); opacity: .4; }
+    .knn-dot {
+      position: absolute;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+      animation: dotFloat 5.4s ease-in-out infinite, dotBlink 3.4s ease-in-out infinite;
+    }
+    .knn-dot.alt { animation-delay: .7s; }
+    .knn-dot.alt-2 { animation-delay: 1.5s; }
+    .knn-dot.alt-3 { animation-delay: 2.3s; }
+    .knn-dot.d1 { right: 350px; top: 70px; }
+    .knn-dot.d2 { right: 180px; top: 120px; }
+    .knn-dot.d3 { right: 80px; top: 160px; }
+    .knn-dot.d4 { right: 260px; top: 220px; }
+    .knn-dot.d5 { right: 60px; top: 260px; }
+    .knn-dot.d6 { right: 190px; top: 180px; width: 11px; height: 11px; background: var(--text); box-shadow: 0 0 0 6px rgba(17,19,23,.08); }
+
+    @keyframes dotFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes dotBlink { 0%, 100% { opacity: .4; } 50% { opacity: .95; } }
+    @keyframes linkGlow { 0%, 100% { opacity: .2; } 50% { opacity: .7; } }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 840px;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .hero-title {
+      margin: 0 0 20px;
+      font-size: clamp(34px, 5.2vw, 56px);
+      line-height: 1.22;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      color: var(--text);
+    }
+    .hero-title span {
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+    .hero-lead {
+      margin: 0 0 28px;
+      font-size: clamp(15px, 2vw, 18px);
+      line-height: 1.75;
+      color: var(--text-secondary);
+      max-width: 720px;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 36px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--text);
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .btn:hover { background: var(--surface-subtle); border-color: var(--text); }
+    .btn.primary {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+    .btn.primary:hover {
+      opacity: .92;
+    }
+    .btn.small {
+      height: 34px;
+      padding: 0 12px;
+      font-size: 12px;
+    }
+    .btn:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--accent-knn);
+      outline-offset: 2px;
+    }
+
+    /* Academic Byline / Contributors (Clean, understated) */
+    .academic-byline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px 20px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      max-width: 880px;
+    }
+    .byline-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .byline-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .byline-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .byline-member {
+      display: flex;
+      flex-direction: column;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .byline-id {
+      font-family: var(--font-mono, monospace);
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .byline-name {
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---------- Editorial Algorithm Index Strip ---------- */
+    .editorial-index {
+      padding: 36px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .index-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .index-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .index-entry {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      transition: border-color .16s ease, transform .16s ease;
+    }
+    .index-entry:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-2px);
+    }
+    .index-entry-num {
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .05em;
+    }
+    .index-entry.knn .index-entry-num { color: var(--accent-knn); }
+    .index-entry.reg .index-entry-num { color: var(--accent-reg); }
+    .index-entry.km .index-entry-num { color: var(--accent-km); }
+    .index-entry h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .index-entry p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    /* ---------- Algorithm Editorial Sections ---------- */
+    .algo-section {
+      padding: clamp(54px, 8vw, 84px) 0;
+      border-bottom: 1px solid var(--line);
+      scroll-margin-top: calc(var(--masthead-height) + 24px);
+    }
+    .algo-section:last-of-type { border-bottom: none; }
+
+    /* Section Masthead */
+    .algo-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+    .algo-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+    .algo-large-num {
+      font-size: clamp(38px, 5vw, 60px);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--muted);
+      opacity: .4;
+      font-variant-numeric: tabular-nums;
+    }
+    .algo-header h2 {
+      margin: 0 0 6px;
+      font-size: clamp(24px, 3.4vw, 36px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text);
+    }
+    .algo-header p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .algo-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .algo-type-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+    }
+    .understand-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 34px;
+      padding: 0 13px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--text);
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .understand-btn:hover {
+      background: var(--surface-subtle);
+      border-color: var(--text);
+    }
+    .understand-btn svg { width: 14px; height: 14px; }
+
+    /* Part 1: Theory (Editorial Reading Column) */
+    .theory-workflow-block {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 36px;
+      align-items: start;
+      margin-bottom: 40px;
+    }
+    .theory-column {
+      max-width: 68ch;
+    }
+    .editorial-subheading {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .editorial-subheading::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+    }
+    .theory-copy {
+      margin: 0 0 18px;
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+    .formula-notebook {
+      padding: 14px 18px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--text);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono, monospace);
+      font-size: 13px;
+      color: var(--text);
+      overflow-x: auto;
+    }
+    .algo-section.knn .formula-notebook { border-left-color: var(--accent-knn); }
+    .algo-section.reg .formula-notebook { border-left-color: var(--accent-reg); }
+    .algo-section.km .formula-notebook { border-left-color: var(--accent-km); }
+
+    /* Part 2: Linear Workflow Timeline (No Boxed Mini-Cards) */
+    .workflow-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+    .workflow-item {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      position: relative;
+    }
+    .workflow-item:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: 15px;
+      top: 30px;
+      bottom: -10px;
+      width: 2px;
+      background: var(--line);
+    }
+    .workflow-step-num {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1.5px solid var(--line-strong);
+      display: grid; place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      z-index: 1;
+    }
+    .workflow-step-body strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .workflow-step-body p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Part 3 & 4: Mathematical Notebook Calculation & Benchmark Result */
+    .calculation-notebook {
+      margin-bottom: 40px;
+      padding: 24px 28px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+    }
+    .notebook-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 20px;
+    }
+    .notebook-header h4 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .notebook-header span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .notebook-intro {
+      margin: 0 0 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .notebook-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .notebook-step {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .notebook-step-num {
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--line);
+      display: grid; place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .notebook-step-body strong {
+      display: block;
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .notebook-step-body p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .calc-code {
+      margin-top: 8px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-code);
+      border: 1px solid var(--line);
+      font-family: var(--font-mono, monospace);
+      font-size: 12px;
+      overflow-x: auto;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    /* Benchmark Result Callout */
+    .calc-result {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+    }
+    .calc-result span {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .calc-result span::before {
+      content: "";
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text);
+      flex: 0 0 auto;
+    }
+    .algo-section.knn .calc-result span::before { background: var(--accent-knn); }
+    .algo-section.reg .calc-result span::before { background: var(--accent-reg); }
+    .algo-section.km .calc-result span::before { background: var(--accent-km); }
+    .calc-result strong {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: var(--font-mono, monospace);
+    }
+
+    /* ---------- Part 5: Hero Interactive Lab Workstation ---------- */
+    .interactive-workstation {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .workstation-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .workstation-title {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .workstation-title h4 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .workstation-title p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .workstation-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+    .workstation-live::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: livePulse 1.6s infinite;
+    }
+    @keyframes livePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,.4); }
+      50% { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+    }
+
+    /* 30% Controls / 70% Visualization Layout */
+    .workstation-body {
+      display: grid;
+      grid-template-columns: 310px minmax(0, 1fr);
+      align-items: stretch;
+    }
+
+    /* Docked Precision Controls Panel */
+    .controls-panel {
+      padding: 22px;
+      background: var(--surface-subtle);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    .control-label .value {
+      color: var(--text);
+      font-family: var(--font-mono, monospace);
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 4px;
+      background: var(--line-strong);
+      accent-color: var(--accent-knn);
+      outline: none;
+      cursor: pointer;
+    }
+    .algo-section.reg input[type="range"] { accent-color: var(--accent-reg); }
+    .algo-section.km input[type="range"] { accent-color: var(--accent-km); }
+
+    input[type="number"] {
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 0 10px;
+      font-size: 12px;
+    }
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .five-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .reg-day-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .reg-day-tag {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .five-grid input {
+      text-align: center;
+      padding: 0 2px;
+      height: 36px;
+      font-size: 11px;
+    }
+    .control-helper {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .control-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Live Experiment Result Box */
+    .live-result-box {
+      margin-top: 6px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+    }
+    .live-result-box .kicker {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--accent-knn);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .algo-section.reg .live-result-box .kicker { color: var(--accent-reg); }
+    .algo-section.km .live-result-box .kicker { color: var(--accent-km); }
+
+    .live-result-box .result-main {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .live-result-box strong {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .live-result-box small {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .result-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .result-row b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+    .sample-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 10px;
+    }
+    .sample-table th, .sample-table td {
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+    .sample-table th {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* Dominant Visualization Canvas (70%) */
+    .canvas-panel {
+      position: relative;
+      min-width: 0;
+      padding: 16px;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+    }
+    .chart {
+      width: 100%;
+      height: 480px;
+    }
+    .chart-caption {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--surface-subtle);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ---------- Colophon / Editorial Footer ---------- */
+    .colophon {
+      padding: 42px 0 60px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .colophon strong { color: var(--text); }
+
+    /* ---------- Clean Reading Panel Modals ---------- */
+    .learn-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      place-items: center;
+      padding: 24px;
+    }
+    .learn-modal.is-open { display: grid; }
+    .learn-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(11, 13, 17, 0.68);
+    }
+    .learn-modal-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(780px, 100%);
+      max-height: min(88vh, 860px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+    }
+    .learn-modal-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .learn-modal-title {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+    }
+    .learn-modal-number {
+      font-size: 16px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+    .learn-modal-top h3 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .learn-modal-top p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .learn-modal-close {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      display: grid; place-items: center;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+    .learn-modal-close:hover { background: var(--surface-subtle); }
+    .learn-modal-scroll {
+      overflow: auto;
+      padding: 24px;
+      overscroll-behavior: contain;
+    }
+    .plain-purpose {
+      margin: 0 0 20px;
+      font-size: 14px;
+      line-height: 1.75;
+      padding: 16px;
+      background: var(--surface-subtle);
+      border-left: 3px solid var(--text);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+    }
+    .plain-example-title {
+      margin: 0 0 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .plain-example-copy {
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .simple-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+    }
+    .simple-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .simple-table th, .simple-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+    .simple-table tr:last-child td { border-bottom: 0; }
+    .simple-table th {
+      background: var(--surface-subtle);
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .simple-table .new-row td {
+      font-weight: 700;
+      background: rgba(37,99,235,0.06);
+    }
+    .plain-flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .plain-flow-step {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-subtle);
+    }
+    .plain-flow-step b {
+      display: block;
+      font-size: 12px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .plain-flow-step span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .memory-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-subtle);
+      border: 1px solid var(--line);
+      margin-bottom: 12px;
+    }
+    .memory-box span {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .memory-box strong {
+      font-size: 13px;
+      color: var(--text);
+      text-align: right;
+    }
+    .plain-note {
+      margin: 0;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    body.modal-open { overflow: hidden; }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 100;
+      max-width: 380px;
+      background: var(--text);
+      color: var(--bg);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ---------- Responsive Media Queries ---------- */
+    @media (max-width: 1040px) {
+      .byline-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .theory-workflow-block { grid-template-columns: 1fr; gap: 28px; }
+      .workstation-body { grid-template-columns: 280px minmax(0, 1fr); }
+    }
+
+    @media (max-width: 840px) {
+      .masthead-nav { display: none; }
+      .mobile-menu-btn { display: grid; }
+      .index-list { grid-template-columns: 1fr; gap: 10px; }
+      .workstation-body { grid-template-columns: 1fr; }
+      .controls-panel { border-right: none; border-bottom: 1px solid var(--line); }
+      .chart { height: 420px; }
+      .plain-flow { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .byline-grid { grid-template-columns: 1fr; gap: 8px; }
+      .algo-header { flex-direction: column; align-items: flex-start; }
+      .five-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+      .chart { height: 360px; }
+      .plain-flow { grid-template-columns: 1fr; }
+      .memory-box { flex-direction: column; align-items: flex-start; }
+      .memory-box strong { text-align: left; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .knn-dot, .knn-link { animation: none !important; }
+    }
+
+    @media print {
+      .masthead, .hero-actions, .control-actions, .drawer-backdrop, .mobile-drawer, .toast, .learn-modal { display: none !important; }
+      body { background: #fff !important; color: #111 !important; }
+      .page-container { max-width: 100% !important; padding: 0 !important; }
+      .calculation-notebook, .interactive-workstation { break-inside: avoid; page-break-inside: avoid; }
+      .equation, .calc-code, .formula-notebook {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+        overflow: visible !important;
+        font-size: 10.5pt !important;
+        line-height: 1.5 !important;
+      }
+      .chart { min-height: 330px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Drawer Backdrop for Mobile -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <!-- Mobile Drawer Menu -->
+  <nav class="mobile-drawer" id="sideNav" aria-label="เมนูบทเรียน">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+      <div style="font-weight: 700; font-size: 14px;">ML Learning Lab</div>
+      <button class="icon-btn" onclick="document.body.classList.remove('menu-open')" aria-label="ปิดเมนู">×</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <a href="#overview" style="padding: 8px 10px; font-weight: 600; font-size: 13px;">ภาพรวมบทเรียน</a>
+      <a href="#knn" style="padding: 8px 10px; font-weight: 600; font-size: 13px;">01 KNN Classification</a>
+      <a href="#regression" style="padding: 8px 10px; font-weight: 600; font-size: 13px;">02 KNN Regression</a>
+      <a href="#kmeans" style="padding: 8px 10px; font-weight: 600; font-size: 13px;">03 K-Means Clustering</a>
+      <a href="#group" style="padding: 8px 10px; font-weight: 600; font-size: 13px;">สมาชิกกลุ่ม</a>
+    </div>
+  </nav>
+
+  <!-- Editorial Sticky Masthead -->
+  <header class="masthead topbar">
+    <div class="masthead-inner">
+      <div class="masthead-brand">
+        <button class="icon-btn mobile-menu-btn" id="menuBtn" aria-label="เปิดเมนู">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="masthead-mark">ML</div>
+        <div class="masthead-title">ML Learning Lab</div>
+        <span class="masthead-kicker">Interactive Educational Lab</span>
+      </div>
+
+      <nav class="masthead-nav">
+        <a href="#overview" class="active">ภาพรวม</a>
+        <a href="#knn"><span class="nav-num">01</span>KNN</a>
+        <a href="#regression"><span class="nav-num">02</span>Regression</a>
+        <a href="#kmeans"><span class="nav-num">03</span>K-Means</a>
+        <a href="#group">คณะผู้จัดทำ</a>
+      </nav>
+
+      <div class="masthead-actions top-actions">
+        <button class="icon-btn" id="themeBtn" aria-label="สลับธีม" title="สลับ Light / Dark">
+          <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-container">
+
+      <!-- Editorial Hero Section -->
+      <section class="editorial-hero" id="overview">
+        <div class="hero-motion" aria-hidden="true">
+          <span class="knn-link l1"></span>
+          <span class="knn-link l2 alt"></span>
+          <span class="knn-link l3 alt-2"></span>
+          <span class="knn-link l4 alt-3"></span>
+          <span class="knn-link l5 alt"></span>
+          <span class="knn-dot d1"></span>
+          <span class="knn-dot d2 alt"></span>
+          <span class="knn-dot d3 alt-2"></span>
+          <span class="knn-dot d4 alt-3"></span>
+          <span class="knn-dot d5 alt"></span>
+          <span class="knn-dot d6 alt-2"></span>
+        </div>
+
+        <div class="hero-content">
+          <h1 class="hero-title">เรียนรู้ Machine Learning <span>ด้วยการทดลองจริงบน Data Visualization</span></h1>
+          <p class="hero-lead">จากทฤษฎีทางคณิตศาสตร์ สู่ภาพจำลองที่มองเห็นได้ เข้าใจกลไกของ KNN Classification, KNN Regression และ K-Means Clustering ผ่าน Interactive Lab ที่ปรับค่าและสังเกตผลลัพธ์ได้ทันที</p>
+          
+          <div class="hero-actions">
+            <a class="btn primary" href="#knn">
+              เริ่มเรียน KNN
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <button class="btn" id="randomAllBtn" type="button">สุ่มตัวอย่างใหม่</button>
+            <button class="btn" id="printBtn" type="button">พิมพ์ / Save PDF</button>
+          </div>
+
+          <!-- Secondary Academic Byline (Clean, restrained presentation) -->
+          <div class="academic-byline" id="group">
+            <div class="byline-header">
+              <span class="byline-label">สมาชิกกลุ่มผู้จัดทำ</span>
+            </div>
+            <div class="byline-grid">
+              <div class="byline-member"><span class="byline-id">66011211002</span><span class="byline-name">นายกฤษณะ เทพาฤทธิ์</span></div>
+              <div class="byline-member"><span class="byline-id">66011211049</span><span class="byline-name">นายยุติธรรม ปั่นกลาง</span></div>
+              <div class="byline-member"><span class="byline-id">66011211074</span><span class="byline-name">นางสาวนัฐกานต์ ทองเชื้อ</span></div>
+              <div class="byline-member"><span class="byline-id">66011211097</span><span class="byline-name">นายอดิศร บุญเหมาะ</span></div>
+              <div class="byline-member"><span class="byline-id">66011211162</span><span class="byline-name">นางสาวณัฐกานต์ ตาทอง</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Editorial Algorithm Index Strip (Replaces 3 generic cards) -->
+      <section class="editorial-index" aria-label="สารบัญบทเรียน">
+        <div class="index-label">หลักสูตรบทเรียนทั้ง 3 อัลกอริทึม</div>
+        <div class="index-list">
+          <a href="#knn" class="index-entry knn">
+            <span class="index-entry-num">01 · CLASSIFICATION</span>
+            <h3>K-Nearest Neighbor</h3>
+            <p>วัดระยะทาง Euclidean → เลือก K เพื่อนบ้านที่ใกล้ที่สุด → โหวตตัดสินคลาส</p>
+          </a>
+          <a href="#regression" class="index-entry reg">
+            <span class="index-entry-num">02 · REGRESSION</span>
+            <h3>KNN Regression</h3>
+            <p>Time Series Sliding Window → เทียบรูปแบบในอดีต → เฉลี่ยค่าเป้าหมายเพื่อพยากรณ์</p>
+          </a>
+          <a href="#kmeans" class="index-entry km">
+            <span class="index-entry-num">03 · CLUSTERING</span>
+            <h3>K-Means Clustering</h3>
+            <p>กำหนด K จุด Centroid → แบ่งกลุ่มข้อมูล Unsupervised → ขยับค่าเฉลี่ยจน Converged</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- ==================== ALGORITHM 01: KNN CLASSIFICATION ==================== -->
+      <article class="algo-section knn" id="knn">
+        <!-- Section Masthead -->
+        <header class="algo-header">
+          <div class="algo-title-wrap">
+            <span class="algo-large-num">01</span>
+            <div>
+              <h2>K-Nearest Neighbor</h2>
+              <p>จำแนกประเภทข้อมูลใหม่จาก “เพื่อนบ้านที่ใกล้ที่สุด” ด้วย Majority Vote</p>
+            </div>
+          </div>
+          <div class="algo-header-actions">
+            <span class="algo-type-tag">Supervised · Classification</span>
+            <button class="understand-btn" type="button" data-learn-open="knn" aria-haspopup="dialog" aria-controls="learnModalKnn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              ทำความเข้าใจ
+            </button>
+          </div>
+        </header>
+
+        <!-- 1. Theory & 2. Workflow Flow -->
+        <div class="theory-workflow-block">
+          <div class="theory-column">
+            <div class="editorial-subheading">1. Theory · หลักการสำคัญ</div>
+            <p class="theory-copy">KNN ใช้การคำนวณระยะห่างเพื่อวัดความคล้ายคลึงระหว่างจุดข้อมูลใหม่กับชุดข้อมูลสอน (Training Data) จากนั้นทำการคัดเลือกเพื่อนบ้านที่มีระยะทางใกล้ที่สุดจำนวน K จุด และใช้เสียงข้างมาก (Majority Vote) เพื่อสรุปว่าข้อมูลใหม่ควรจัดอยู่ในคลาสใด</p>
+            <div class="formula-notebook">
+              Distance = √Σ(x₁ᵢ − x₂ᵢ)²
+            </div>
+          </div>
+
+          <div class="workflow-column">
+            <div class="editorial-subheading">2. ML Workflow · ลำดับขั้นตอน</div>
+            <div class="workflow-timeline">
+              <div class="workflow-item">
+                <div class="workflow-step-num">1</div>
+                <div class="workflow-step-body">
+                  <strong>Input Data</strong>
+                  <p>รับพิกัดจุดข้อมูลทดสอบใหม่ (Feature X, Y)</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">2</div>
+                <div class="workflow-step-body">
+                  <strong>Calculate Distance</strong>
+                  <p>คำนวณ Euclidean Distance เทียบกับจุดใน Training Set ทั้งหมด</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">3</div>
+                <div class="workflow-step-body">
+                  <strong>Select Nearest K</strong>
+                  <p>เรียงลำดับระยะทางจากน้อยไปมาก แล้วเลือก K จุดที่ใกล้ที่สุด</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">4</div>
+                <div class="workflow-step-body">
+                  <strong>Majority Vote</strong>
+                  <p>คลาสที่ได้รับเสียงโหวตมากที่สุดกลายเป็นผลการทำนาย</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Calculation Example & 4. Calculation Result (Mathematical Notebook) -->
+        <section class="calculation-notebook" aria-label="ตัวอย่างการคำนวณ KNN">
+          <div class="notebook-header">
+            <h4>3. Calculation Example · ตัวอย่างการคำนวณแบบ Step-by-step</h4>
+            <span>Euclidean Distance + Majority Vote</span>
+          </div>
+          <p class="notebook-intro">ตัวอย่างตามทฤษฎี: ข้อมูลทดสอบ Test Data = [4, 3, 4, 3, 4], ข้อมูลฝึกสอน Training Data = [3, 3, 5, 2, 4] กำหนดค่า K = 3</p>
+          <div class="notebook-steps">
+            <div class="notebook-step">
+              <div class="notebook-step-num">1</div>
+              <div class="notebook-step-body">
+                <strong>หาผลต่างของแต่ละมิติ (Feature Differences)</strong>
+                <p>นำค่าแต่ละ Feature ของ Test Data ลบด้วย Training Data ทีละตำแหน่ง</p>
+                <div class="calc-code">[4−3, 3−3, 4−5, 3−2, 4−4] = [1, 0, −1, 1, 0]</div>
+              </div>
+            </div>
+            <div class="notebook-step">
+              <div class="notebook-step-num">2</div>
+              <div class="notebook-step-body">
+                <strong>คำนวณ Euclidean Distance</strong>
+                <p>ยกกำลังสองของความต่างในแต่ละมิติ นำมารวมกัน แล้วถอดรากที่สอง</p>
+                <div class="calc-code">√(1² + 0² + (−1)² + 1² + 0²) = √3 ≈ 1.732</div>
+              </div>
+            </div>
+            <div class="notebook-step">
+              <div class="notebook-step-num">3</div>
+              <div class="notebook-step-body">
+                <strong>เลือกเพื่อนบ้านที่ใกล้ที่สุด K = 3 จุด</strong>
+                <p>ระยะห่างที่ใกล้ที่สุด 3 อันดับแรกคือ 1.732, 2.449 และ 2.449 ซึ่งเป็นข้อมูล Class A ทั้งหมด</p>
+              </div>
+            </div>
+            <div class="notebook-step">
+              <div class="notebook-step-num">4</div>
+              <div class="notebook-step-body">
+                <strong>ลงคะแนนเสียง (Majority Voting)</strong>
+                <p>Class A ได้คะแนนเสียง 3 จาก 3 เสียง จึงสรุปการทำนายเป็น Class A</p>
+              </div>
+            </div>
+          </div>
+          <!-- 4. Distinct Benchmark Result -->
+          <div class="calc-result">
+            <span>ผลลัพธ์จากตัวอย่างการคำนวณ (Benchmark)</span>
+            <strong>Predicted = Class A · Accuracy = 100%</strong>
+          </div>
+        </section>
+
+        <!-- 5. Interactive Workstation (70% Canvas / 30% Docked Controls) -->
+        <section class="interactive-workstation" aria-label="ห้องทดลอง KNN">
+          <div class="workstation-header">
+            <div class="workstation-title">
+              <h4>5. Interactive Lab · KNN Classification Workstation</h4>
+              <p>ปรับเปลี่ยนตำแหน่ง Test Data หรือเปลี่ยนค่า K เพื่อสังเกตการโหวตแบบเรียลไทม์</p>
+            </div>
+            <div class="workstation-live">Live Interactive</div>
+          </div>
+          <div class="workstation-body">
+            <!-- 30% Docked Precision Controls -->
+            <div class="controls-panel">
+              <div class="control-group">
+                <div class="control-label"><span>จำนวนเพื่อนบ้าน K</span><span class="value" id="knnKValue">3</span></div>
+                <input id="knnK" type="range" min="1" max="7" step="2" value="3" aria-label="ค่า K ของ KNN" />
+                <span class="control-helper">แนะนำให้ใช้เลขคี่เสมอเพื่อหลีกเลี่ยงผลโหวตเสมอ</span>
+              </div>
+              <div class="control-group">
+                <div class="control-label"><span>ตำแหน่งพิกัด Test Data</span><span class="value" id="knnXYValue">4.5, 4.5</span></div>
+                <div class="input-grid">
+                  <input id="knnX" type="number" min="0" max="11" step="0.1" value="4.5" aria-label="พิกัด Feature X" />
+                  <input id="knnY" type="number" min="0" max="11" step="0.1" value="4.5" aria-label="พิกัด Feature Y" />
+                </div>
+              </div>
+              <div class="control-actions">
+                <button class="btn primary small" id="runKnn" type="button">Run prediction</button>
+                <button class="btn small" id="randomKnn" type="button">สุ่มจุดพิกัด</button>
+              </div>
+
+              <!-- Live Experiment Result Card -->
+              <div class="live-result-box">
+                <div class="kicker">ผลลัพธ์จากการทดลองของคุณ (Prediction)</div>
+                <div class="result-main">
+                  <strong id="knnPrediction">Class A</strong>
+                  <small id="knnConfidence">3 / 3 votes</small>
+                </div>
+                <div class="result-list" id="knnNeighborList"></div>
+              </div>
+            </div>
+
+            <!-- 70% Dominant Visualization Canvas -->
+            <div class="canvas-panel">
+              <div id="knnChart" class="chart" aria-label="กราฟกระจายตัว KNN Classification"></div>
+              <div class="chart-caption">คำอธิบายภาพ: วงแหวนสีส้มล้อมรอบ = K เพื่อนบ้านที่ใกล้ที่สุด · จุดรูปดาว = ตำแหน่ง Test Data ที่คุณกำหนด</div>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      <!-- ==================== ALGORITHM 02: KNN REGRESSION ==================== -->
+      <article class="algo-section reg" id="regression">
+        <!-- Section Masthead -->
+        <header class="algo-header">
+          <div class="algo-title-wrap">
+            <span class="algo-large-num">02</span>
+            <div>
+              <h2>KNN Regression</h2>
+              <p>พยากรณ์ค่าตัวเลขต่อเนื่องจากรูปแบบในอดีตที่คล้ายคลึงกัน (Sliding Window)</p>
+            </div>
+          </div>
+          <div class="algo-header-actions">
+            <span class="algo-type-tag">Supervised · Regression</span>
+            <button class="understand-btn" type="button" data-learn-open="regression" aria-haspopup="dialog" aria-controls="learnModalRegression">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              ทำความเข้าใจ
+            </button>
+          </div>
+        </header>
+
+        <!-- 1. Theory & 2. Workflow Flow -->
+        <div class="theory-workflow-block">
+          <div class="theory-column">
+            <div class="editorial-subheading">1. Theory · หลักการสำคัญ</div>
+            <p class="theory-copy">KNN Regression ใช้การคำนวณระยะห่างเวกเตอร์เพื่อหารูปแบบหน้าต่างข้อมูลในอดีตที่มีความใกล้เคียงที่สุด แต่แทนที่จะลงคะแนนโหวตคลาส ระบบจะนำค่าเป้าหมาย (Target) ของเพื่อนบ้าน K ชุดที่คล้ายที่สุดมาคำนวณหาค่าเฉลี่ยเลขคณิต เพื่อทำนายราคาวันถัดไป</p>
+            <div class="formula-notebook">
+              ŷ = (y₁ + y₂ + … + yₖ) / K
+            </div>
+          </div>
+
+          <div class="workflow-column">
+            <div class="editorial-subheading">2. ML Workflow · ลำดับขั้นตอน</div>
+            <div class="workflow-timeline">
+              <div class="workflow-item">
+                <div class="workflow-step-num">1</div>
+                <div class="workflow-step-body">
+                  <strong>Sliding Window</strong>
+                  <p>สร้างเวกเตอร์ Feature ขนาด 5 วัน เพื่อเป็นรูปแบบอ้างอิง</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">2</div>
+                <div class="workflow-step-body">
+                  <strong>Compare Patterns</strong>
+                  <p>เทียบระยะห่างของรูปแบบปัจจุบันกับหน้าต่างในอดีต</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">3</div>
+                <div class="workflow-step-body">
+                  <strong>Select K Windows</strong>
+                  <p>เลือก K ช่วงเวลาในอดีตที่มี Distance ต่ำที่สุด</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">4</div>
+                <div class="workflow-step-body">
+                  <strong>Average Target</strong>
+                  <p>หาค่าเฉลี่ยของราคาวันถัดไปของเพื่อนบ้านเพื่อสรุปคำพยากรณ์</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Calculation Example & 4. Calculation Result (Mathematical Notebook) -->
+        <section class="calculation-notebook" aria-label="ตัวอย่างการคำนวณ KNN Regression">
+          <div class="notebook-header">
+            <h4>3. Calculation Example · ตัวอย่างการคำนวณแบบ Step-by-step</h4>
+            <span>Sliding Window + Target Averaging</span>
+          </div>
+          <p class="notebook-intro">ตัวอย่างตามทฤษฎี: ราคาปิดย้อนหลัง 6 วัน = [183, 184, 185, 186, 187, 188] โดยใช้ Sliding Window ขนาด 5 วัน</p>
+          <div class="notebook-steps">
+            <div class="notebook-step">
+              <div class="notebook-step-num">1</div>
+              <div class="notebook-step-body">
+                <strong>กำหนด Feature และ Target สำหรับโมเดล</strong>
+                <p>ใช้ 5 วันแรกเป็นข้อมูลนำเข้า และวันที่ 6 เป็นค่าผลลัพธ์จริงที่ต้องการเรียนรู้</p>
+                <div class="calc-code">Feature Window = [183, 184, 185, 186, 187] → Target (Next Day) = 188</div>
+              </div>
+            </div>
+            <div class="notebook-step">
+              <div class="notebook-step-num">2</div>
+              <div class="notebook-step-body">
+                <strong>ค้นหา K เพื่อนบ้านที่มีรูปแบบใกล้เคียงที่สุด</strong>
+                <p>สมมติกำหนด K = 3 และพบว่าค่า Target ของ 3 เพื่อนบ้านที่คล้ายที่สุดคือ 185, 186 และ 187</p>
+              </div>
+            </div>
+            <div class="notebook-step">
+              <div class="notebook-step-num">3</div>
+              <div class="notebook-step-body">
+                <strong>คำนวณค่าเฉลี่ยเลขคณิต</strong>
+                <p>KNN Regression จะหาค่าเฉลี่ยแทนการลงคะแนนเสียงโหวต</p>
+                <div class="calc-code">ŷ = (185 + 186 + 187) / 3 = 558 / 3 = 186.00</div>
+              </div>
+            </div>
+          </div>
+          <!-- 4. Distinct Benchmark Result -->
+          <div class="calc-result">
+            <span>ผลลัพธ์จากตัวอย่างการคำนวณ (Benchmark)</span>
+            <strong>Predicted Close = 186.00</strong>
+          </div>
+        </section>
+
+        <!-- 5. Interactive Workstation (70% Canvas / 30% Docked Controls) -->
+        <section class="interactive-workstation" aria-label="ห้องทดลอง KNN Regression">
+          <div class="workstation-header">
+            <div class="workstation-title">
+              <h4>5. Interactive Lab · KNN Regression Workstation</h4>
+              <p>ปรับเปลี่ยนราคาย้อนหลัง 5 วัน แล้วดูว่ารูปแบบในอดีตใดถูกดึงมาคำนวณพยากรณ์</p>
+            </div>
+            <div class="workstation-live">Live Interactive</div>
+          </div>
+          <div class="workstation-body">
+            <!-- 30% Docked Precision Controls -->
+            <div class="controls-panel">
+              <div class="control-group">
+                <div class="control-label"><span>ราคาย้อนหลัง 5 วัน (Day 1 → Day 5)</span><span class="value">Chronological</span></div>
+                <div class="five-grid">
+                  <div class="reg-day-item">
+                    <span class="reg-day-tag">Day 1</span>
+                    <input class="reg-day" type="number" value="183" min="50" max="350" step="1" aria-label="ราคาปิด Day 1" />
+                  </div>
+                  <div class="reg-day-item">
+                    <span class="reg-day-tag">Day 2</span>
+                    <input class="reg-day" type="number" value="184" min="50" max="350" step="1" aria-label="ราคาปิด Day 2" />
+                  </div>
+                  <div class="reg-day-item">
+                    <span class="reg-day-tag">Day 3</span>
+                    <input class="reg-day" type="number" value="185" min="50" max="350" step="1" aria-label="ราคาปิด Day 3" />
+                  </div>
+                  <div class="reg-day-item">
+                    <span class="reg-day-tag">Day 4</span>
+                    <input class="reg-day" type="number" value="186" min="50" max="350" step="1" aria-label="ราคาปิด Day 4" />
+                  </div>
+                  <div class="reg-day-item">
+                    <span class="reg-day-tag">Day 5</span>
+                    <input class="reg-day" type="number" value="187" min="50" max="350" step="1" aria-label="ราคาปิด Day 5" />
+                  </div>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label"><span>จำนวนเพื่อนบ้าน K</span><span class="value" id="regKValue">3</span></div>
+                <input id="regK" type="range" min="1" max="5" step="1" value="3" aria-label="ค่า K ของ Regression" />
+              </div>
+              <div class="control-actions">
+                <button class="btn primary small" id="runReg" type="button">Predict next day</button>
+                <button class="btn small" id="presetReg" type="button">สุ่มตัวอย่างใหม่</button>
+              </div>
+
+              <!-- Live Experiment Result Card -->
+              <div class="live-result-box">
+                <div class="kicker">ผลลัพธ์จากการทดลองของคุณ (Predicted Close)</div>
+                <div class="result-main">
+                  <strong id="regPrediction">188.00</strong>
+                  <small id="regInfo">K = 3 · avg target</small>
+                </div>
+                <table class="sample-table" aria-label="ตารางระยะห่างและค่า Target ของเพื่อนบ้าน K จุด">
+                  <thead><tr><th scope="col">Neighbor</th><th scope="col">Distance</th><th scope="col">Target</th></tr></thead>
+                  <tbody id="regNeighborTable"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 70% Dominant Visualization Canvas -->
+            <div class="canvas-panel">
+              <div id="regChart" class="chart" aria-label="กราฟเส้นพยากรณ์ KNN Regression"></div>
+              <div class="chart-caption">คำอธิบายภาพ: เส้นทึบ = ข้อมูล Input 5 วันของคุณ · จุดรูปข้าวหลามตัด (Diamond) = ค่าราคาที่โมเดลประมาณการสำหรับวันถัดไป</div>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      <!-- ==================== ALGORITHM 03: K-MEANS CLUSTERING ==================== -->
+      <article class="algo-section km" id="kmeans">
+        <!-- Section Masthead -->
+        <header class="algo-header">
+          <div class="algo-title-wrap">
+            <span class="algo-large-num">03</span>
+            <div>
+              <h2>K-Means Clustering</h2>
+              <p>จัดกลุ่มข้อมูล Unsupervised โดยดึงดูดข้อมูลเข้าหาจุดศูนย์กลาง (Centroid)</p>
+            </div>
+          </div>
+          <div class="algo-header-actions">
+            <span class="algo-type-tag">Unsupervised · Clustering</span>
+            <button class="understand-btn" type="button" data-learn-open="kmeans" aria-haspopup="dialog" aria-controls="learnModalKmeans">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              ทำความเข้าใจ
+            </button>
+          </div>
+        </header>
+
+        <!-- 1. Theory & 2. Workflow Flow -->
+        <div class="theory-workflow-block">
+          <div class="theory-column">
+            <div class="editorial-subheading">1. Theory · หลักการสำคัญ</div>
+            <p class="theory-copy">K-Means เริ่มต้นจากการกำหนดจำนวนกลุ่ม K และวางตำแหน่ง Centroid จากนั้นคำนวณระยะห่างเพื่อจัดสมาชิกแต่ละจุดเข้ากลุ่มที่ใกล้ที่สุด แล้วคำนวณค่าเฉลี่ยพิกัดใหม่เพื่อย้าย Centroid กระบวนการนี้จะวนซ้ำแบบ Iterative จนตำแหน่งของ Centroid แทบไม่มีการเปลี่ยนแปลง (Converged)</p>
+            <div class="formula-notebook">
+              Centroid = mean(points in cluster)
+            </div>
+          </div>
+
+          <div class="workflow-column">
+            <div class="editorial-subheading">2. ML Workflow · ลำดับขั้นตอน</div>
+            <div class="workflow-timeline">
+              <div class="workflow-item">
+                <div class="workflow-step-num">1</div>
+                <div class="workflow-step-body">
+                  <strong>Initialize</strong>
+                  <p>กำหนดจำนวนกลุ่ม K และสุ่มเลือกตำแหน่ง Centroid เริ่มต้น</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">2</div>
+                <div class="workflow-step-body">
+                  <strong>Assign Clusters</strong>
+                  <p>จัดจุดข้อมูลทุกจุดเข้าสู่กลุ่มของ Centroid ที่อยู่ใกล้ที่สุด</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">3</div>
+                <div class="workflow-step-body">
+                  <strong>Update Centroids</strong>
+                  <p>คำนวณค่าเฉลี่ยใหม่ของสมาชิกในแต่ละกลุ่ม แล้วเลื่อนตำแหน่ง Centroid</p>
+                </div>
+              </div>
+              <div class="workflow-item">
+                <div class="workflow-step-num">4</div>
+                <div class="workflow-step-body">
+                  <strong>Iterate to Convergence</strong>
+                  <p>ทำซ้ำขั้นตอน Assign และ Update จนกว่า Centroid จะหยุดเคลื่อนที่</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Calculation Example & 4. Calculation Result (Mathematical Notebook) -->
+        <section class="calculation-notebook" aria-label="ตัวอย่างการคำนวณ K-Means">
+          <div class="notebook-header">
+            <h4>3. Calculation Example · ตัวอย่างการคำนวณแบบ Step-by-step</h4>
+            <span>Distance Assignment + Centroid Recalculation</span>
+          </div>
+          <p class="notebook-intro">ตัวอย่างตามทฤษฎี: กำหนด K = 2, พิจารณาจุดข้อมูล A(2,3) และ Centroid เริ่มต้น C₁(2,3), C₂(9,9)</p>
+          <div class="notebook-steps">
+            <div class="notebook-step">
+              <div class="notebook-step-num">1</div>
+              <div class="notebook-step-body">
+                <strong>คำนวณระยะห่างจากจุด A ไปยังแต่ละ Centroid</strong>
+                <div class="calc-code">d(A, C₁) = √((2−2)² + (3−3)²) = 0.00</div>
+                <div class="calc-code">d(A, C₂) = √((2−9)² + (3−9)²) ≈ 9.22</div>
+              </div>
+            </div>
+            <div class="notebook-step">
+              <div class="notebook-step-num">2</div>
+              <div class="notebook-step-body">
+                <strong>จัดจุด A เข้ากลุ่ม (Cluster Assignment)</strong>
+                <p>เนื่องจาก 0.00 &lt; 9.22 จุด A จึงถูกกำหนดให้อยู่ใน Cluster 1</p>
+              </div>
+            </div>
+            <div class="notebook-step">
+              <div class="notebook-step-num">3</div>
+              <div class="notebook-step-body">
+                <strong>คำนวณค่าเฉลี่ยใหม่ของกลุ่ม (Centroid Update)</strong>
+                <p>สมมติ Cluster 1 มีสมาชิกร่วมได้แก่ A(2,3), B(3,4), C(4,5)</p>
+                <div class="calc-code">x̄ = (2 + 3 + 4) / 3 = 3.00  ·  ȳ = (3 + 4 + 5) / 3 = 4.00</div>
+              </div>
+            </div>
+            <div class="notebook-step">
+              <div class="notebook-step-num">4</div>
+              <div class="notebook-step-body">
+                <strong>ทำซ้ำจนตำแหน่งคงที่ (Convergence)</strong>
+                <p>Centroid ใหม่ของ Cluster 1 เลื่อนไปอยู่ที่ (3.00, 4.00) จากนั้นทำการจัดกลุ่มใหม่และคำนวณซ้ำ</p>
+              </div>
+            </div>
+          </div>
+          <!-- 4. Distinct Benchmark Result -->
+          <div class="calc-result">
+            <span>ผลลัพธ์จากตัวอย่างการคำนวณ (Benchmark)</span>
+            <strong>Updated C₁ = (3.00, 4.00) → Repeat until Converged</strong>
+          </div>
+        </section>
+
+        <!-- 5. Interactive Workstation (70% Canvas / 30% Docked Controls) -->
+        <section class="interactive-workstation" aria-label="ห้องทดลอง K-Means">
+          <div class="workstation-header">
+            <div class="workstation-title">
+              <h4>5. Interactive Lab · K-Means Clustering Workstation</h4>
+              <p>กดปุ่ม Step เพื่อดู Centroid ขยับทีละรอบ หรือกด Run เพื่อดูภาพเคลื่อนไหวการ Converge</p>
+            </div>
+            <div class="workstation-live">Live Interactive</div>
+          </div>
+          <div class="workstation-body">
+            <!-- 30% Docked Precision Controls -->
+            <div class="controls-panel">
+              <div class="control-group">
+                <div class="control-label"><span>จำนวนกลุ่ม K</span><span class="value" id="kmKValue">3</span></div>
+                <input id="kmK" type="range" min="2" max="4" step="1" value="3" aria-label="ค่า K ของ K-Means" />
+                <span class="control-helper">เมื่อปรับเปลี่ยนค่า K ระบบจะทำการรีเซ็ต Centroid เริ่มต้นใหม่ทันที</span>
+              </div>
+              <div class="control-actions">
+                <button class="btn primary small" id="kmStep" type="button">Step 1 iteration</button>
+                <button class="btn small" id="kmRun" type="button">Run to converge</button>
+                <button class="btn small" id="kmReset" type="button">Reset</button>
+              </div>
+
+              <!-- Live Experiment Result Card -->
+              <div class="live-result-box">
+                <div class="kicker">ผลลัพธ์จากการทดลองของคุณ (Training Status)</div>
+                <div class="result-main">
+                  <strong id="kmStatus">Ready</strong>
+                  <small id="kmIteration">Iteration 0</small>
+                </div>
+                <div class="result-list">
+                  <div class="result-row"><span>Within-cluster SSE</span><b id="kmSSE">—</b></div>
+                  <div class="result-row"><span>Centroid shift</span><b id="kmShift">—</b></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 70% Dominant Visualization Canvas -->
+            <div class="canvas-panel">
+              <div id="kmChart" class="chart" aria-label="กราฟกลุ่มข้อมูล K-Means"></div>
+              <div class="chart-caption">คำอธิบายภาพ: เครื่องหมายกากบาท X = ตำแหน่ง Centroid ปัจจุบัน · สีของแต่ละจุด = กลุ่มที่ระบบจัดให้ในรอบการคำนวณนี้</div>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      <!-- Colophon / Academic Credits -->
+      <footer class="colophon">
+        <div>
+          <strong>ML Learning Lab</strong> · Interactive Visual Educational System
+        </div>
+        <div>
+          Machine Learning Midterm Project · 3 Algorithms · Worked Examples · Live Visualizations
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <!-- ==================== READING PANEL MODALS ==================== -->
+  <div class="learn-modal" id="learnModalKnn" data-learn-modal="knn" data-accent="blue" role="dialog" aria-modal="true" aria-labelledby="learnModalKnnTitle" aria-hidden="true">
+    <div class="learn-modal-backdrop" data-learn-close></div>
+    <div class="learn-modal-dialog" role="document">
+      <div class="learn-modal-top">
+        <div class="learn-modal-title">
+          <span class="learn-modal-number">01</span>
+          <div>
+            <h3 id="learnModalKnnTitle">ทำความเข้าใจ · K-Nearest Neighbor (KNN)</h3>
+            <p>ตอบคำถามว่า: “ข้อมูลที่เข้ามาใหม่นี้ ควรจัดอยู่ในกลุ่มไหน?” ผ่านตัวอย่างชีวิตประจำวัน</p>
+          </div>
+        </div>
+        <button class="learn-modal-close" type="button" data-learn-close aria-label="ปิดหน้าต่าง">×</button>
+      </div>
+      <div class="learn-modal-scroll">
+        <p class="plain-purpose"><strong>KNN ใช้สำหรับจำแนกข้อมูลใหม่</strong> โดยเปรียบเทียบความใกล้เคียงกับข้อมูลเดิมที่มีอยู่จำนวน K ตัว แล้วอาศัยเสียงข้างมาก (Majority Vote) ในการตัดสินกลุ่ม</p>
+        <div>
+          <h5 class="plain-example-title">ตัวอย่างชีวิตจริง: ร้านผลไม้จำแนกผลไม้ชนิดใหม่</h5>
+          <p class="plain-example-copy">ร้านเก็บข้อมูลผลไม้เดิมไว้โดยวัดจาก “น้ำหนัก” และ “ระดับความหวาน” เมื่อมีผลไม้ลูกใหม่เข้ามาและยังไม่ทราบชนิด</p>
+          <div class="simple-table-wrap">
+            <table class="simple-table" aria-label="ตารางตัวอย่างข้อมูลผลไม้สำหรับทำความเข้าใจ KNN">
+              <thead><tr><th scope="col">ข้อมูล</th><th scope="col">น้ำหนัก</th><th scope="col">ความหวาน (1–10)</th><th scope="col">ประเภทที่รู้แล้ว</th></tr></thead>
+              <tbody>
+                <tr><td>ผลไม้ A</td><td>150 กรัม</td><td>7</td><td>แอปเปิล</td></tr>
+                <tr><td>ผลไม้ B</td><td>160 กรัม</td><td>8</td><td>แอปเปิล</td></tr>
+                <tr><td>ผลไม้ C</td><td>140 กรัม</td><td>7</td><td>แอปเปิล</td></tr>
+                <tr><td>ผลไม้ D</td><td>110 กรัม</td><td>5</td><td>ส้ม</td></tr>
+                <tr><td>ผลไม้ E</td><td>120 กรัม</td><td>6</td><td>ส้ม</td></tr>
+                <tr class="new-row"><td>ผลไม้ใหม่</td><td>145 กรัม</td><td>7</td><td>?</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="plain-flow">
+          <div class="plain-flow-step"><b>1. มีข้อมูลใหม่</b><span>ผลไม้ใหม่หนัก 145g ความหวาน 7</span></div>
+          <div class="plain-flow-step"><b>2. หาเพื่อนบ้าน</b><span>คำนวณระยะห่างเทียบกับผลไม้เดิม</span></div>
+          <div class="plain-flow-step"><b>3. กำหนด K = 3</b><span>เลือก 3 ผลที่ใกล้ที่สุด ได้แอปเปิล 3 ลูก</span></div>
+          <div class="plain-flow-step"><b>4. โหวต</b><span>แอปเปิล 3 เสียง → ทำนายเป็นแอปเปิล</span></div>
+        </div>
+        <div class="memory-box">
+          <span>สรุปใจความสำคัญ</span>
+          <strong>KNN = “ถามเพื่อนบ้านที่ใกล้ที่สุด” → กลุ่มไหนอยู่ใกล้เรามากที่สุด เราน่าจะอยู่กลุ่มนั้น</strong>
+        </div>
+        <p class="plain-note">ตัวอย่างนี้สร้างขึ้นเพื่ออธิบายแนวคิด ในงานจริงมักต้องเตรียมข้อมูล (Data Normalization) ก่อนวัดระยะทาง</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="learn-modal" id="learnModalRegression" data-learn-modal="regression" data-accent="green" role="dialog" aria-modal="true" aria-labelledby="learnModalRegressionTitle" aria-hidden="true">
+    <div class="learn-modal-backdrop" data-learn-close></div>
+    <div class="learn-modal-dialog" role="document">
+      <div class="learn-modal-top">
+        <div class="learn-modal-title">
+          <span class="learn-modal-number">02</span>
+          <div>
+            <h3 id="learnModalRegressionTitle">ทำความเข้าใจ · KNN Regression</h3>
+            <p>ตอบคำถามว่า: “ค่าของข้อมูลใหม่น่าจะประมาณเท่าไร?” ผ่านตัวอย่างการประเมินราคาห้องเช่า</p>
+          </div>
+        </div>
+        <button class="learn-modal-close" type="button" data-learn-close aria-label="ปิดหน้าต่าง">×</button>
+      </div>
+      <div class="learn-modal-scroll">
+        <p class="plain-purpose"><strong>KNN Regression ใช้สำหรับประมาณค่าตัวเลขต่อเนื่อง</strong> โดยหารูปแบบข้อมูลเก่าที่มีลักษณะใกล้เคียงที่สุด K ตัว แล้วนำค่าผลลัพธ์ของเพื่อนบ้านเหล่านั้นมาหาค่าเฉลี่ย แทนการใช้การโหวต</p>
+        <div>
+          <h5 class="plain-example-title">ตัวอย่างชีวิตจริง: การประมาณค่าเช่าห้องพัก</h5>
+          <p class="plain-example-copy">เรามีประวัติห้องเช่าเดิมโดยดูจาก “ขนาดห้อง” และ “ระยะห่างจากมหาวิทยาลัย” เมื่อมีห้องใหม่เข้ามาและต้องการประเมินราคา</p>
+          <div class="simple-table-wrap">
+            <table class="simple-table" aria-label="ตารางตัวอย่างข้อมูลห้องเช่าสำหรับทำความเข้าใจ KNN Regression">
+              <thead><tr><th scope="col">ห้อง</th><th scope="col">ขนาด</th><th scope="col">ห่างมหาวิทยาลัย</th><th scope="col">ค่าเช่าจริง</th></tr></thead>
+              <tbody>
+                <tr><td>ห้อง A</td><td>25 ตร.ม.</td><td>1.0 กม.</td><td>5,500 บาท</td></tr>
+                <tr><td>ห้อง B</td><td>27 ตร.ม.</td><td>1.2 กม.</td><td>5,800 บาท</td></tr>
+                <tr><td>ห้อง C</td><td>30 ตร.ม.</td><td>1.5 กม.</td><td>6,200 บาท</td></tr>
+                <tr><td>ห้อง D</td><td>45 ตร.ม.</td><td>4.0 กม.</td><td>9,000 บาท</td></tr>
+                <tr class="new-row"><td>ห้องใหม่</td><td>28 ตร.ม.</td><td>1.3 กม.</td><td>?</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="plain-flow">
+          <div class="plain-flow-step"><b>1. มีห้องใหม่</b><span>ขนาด 28 ตร.ม. ห่างมหาวิทยาลัย 1.3 กม.</span></div>
+          <div class="plain-flow-step"><b>2. หาเพื่อนบ้าน</b><span>หาห้องที่มีขนาดและทำเลใกล้เคียงที่สุด</span></div>
+          <div class="plain-flow-step"><b>3. กำหนด K = 3</b><span>ได้ห้อง A, B, C ราคา 5.5k / 5.8k / 6.2k</span></div>
+          <div class="plain-flow-step"><b>4. หาค่าเฉลี่ย</b><span>(5,500 + 5,800 + 6,200) ÷ 3 ≈ 5,833 บาท</span></div>
+        </div>
+        <div class="memory-box">
+          <span>สรุปใจความสำคัญ</span>
+          <strong>KNN Regression = “ถามเพื่อนบ้านเหมือนกัน” แต่ไม่โหวต → นำค่าตัวเลขมาเฉลี่ยเลขคณิต</strong>
+        </div>
+        <p class="plain-note">ในงานจริงมักต้องทำ Feature Scaling เพื่อปรับหน่วยของขนาดและระยะทางให้สมดุลกันก่อนคำนวณ</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="learn-modal" id="learnModalKmeans" data-learn-modal="kmeans" data-accent="purple" role="dialog" aria-modal="true" aria-labelledby="learnModalKmeansTitle" aria-hidden="true">
+    <div class="learn-modal-backdrop" data-learn-close></div>
+    <div class="learn-modal-dialog" role="document">
+      <div class="learn-modal-top">
+        <div class="learn-modal-title">
+          <span class="learn-modal-number">03</span>
+          <div>
+            <h3 id="learnModalKmeansTitle">ทำความเข้าใจ · K-Means Clustering</h3>
+            <p>ตอบคำถามว่า: “ข้อมูลทั้งหมดสามารถแบ่งออกเป็นกลุ่มพฤติกรรมอะไรได้บ้าง?” โดยไม่มีเฉลยล่วงหน้า</p>
+          </div>
+        </div>
+        <button class="learn-modal-close" type="button" data-learn-close aria-label="ปิดหน้าต่าง">×</button>
+      </div>
+      <div class="learn-modal-scroll">
+        <p class="plain-purpose"><strong>K-Means ใช้สำหรับจัดกลุ่มข้อมูลที่ยังไม่มีป้ายกำกับ (Unsupervised)</strong> โดยระบุจำนวนกลุ่ม K ที่ต้องการ จากนั้นระบบจะสร้างจุดศูนย์กลาง Centroid และขยับปรับตำแหน่งแบบวนซ้ำจนกลุ่มนิ่ง</p>
+        <div>
+          <h5 class="plain-example-title">ตัวอย่างชีวิตจริง: ร้านค้าจัดกลุ่มลูกค้าตามพฤติกรรมการซื้อ</h5>
+          <p class="plain-example-copy">ร้านมีข้อมูล “ความถี่ที่มาซื้อต่อเดือน” และ “ยอดใช้จ่าย” โดยยังไม่ได้ระบุว่าใครเป็นลูกค้าประเภทไหน</p>
+          <div class="simple-table-wrap">
+            <table class="simple-table" aria-label="ตารางตัวอย่างข้อมูลลูกค้าสำหรับทำความเข้าใจ K-Means">
+              <thead><tr><th scope="col">ลูกค้า</th><th scope="col">มาซื้อ/เดือน</th><th scope="col">ยอดใช้จ่าย/เดือน</th><th scope="col">กลุ่มก่อนรัน</th></tr></thead>
+              <tbody>
+                <tr><td>ลูกค้า A</td><td>1 ครั้ง</td><td>300 บาท</td><td>ยังไม่รู้</td></tr>
+                <tr><td>ลูกค้า B</td><td>2 ครั้ง</td><td>500 บาท</td><td>ยังไม่รู้</td></tr>
+                <tr><td>ลูกค้า C</td><td>3 ครั้ง</td><td>700 บาท</td><td>ยังไม่รู้</td></tr>
+                <tr><td>ลูกค้า D</td><td>10 ครั้ง</td><td>4,000 บาท</td><td>ยังไม่รู้</td></tr>
+                <tr><td>ลูกค้า E</td><td>12 ครั้ง</td><td>5,000 บาท</td><td>ยังไม่รู้</td></tr>
+                <tr><td>ลูกค้า F</td><td>9 ครั้ง</td><td>4,500 บาท</td><td>ยังไม่รู้</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="plain-flow">
+          <div class="plain-flow-step"><b>1. กำหนด K = 2</b><span>ระบุว่าต้องการแบ่งลูกค้าออกเป็น 2 กลุ่ม</span></div>
+          <div class="plain-flow-step"><b>2. วาง Centroid</b><span>ระบบวางจุดศูนย์กลางเริ่มต้นของแต่ละกลุ่ม</span></div>
+          <div class="plain-flow-step"><b>3. จัดกลุ่ม & ย้าย</b><span>ลูกค้าเลือก Centroid ที่ใกล้ตนเอง จากนั้นย้ายจุดศูนย์กลาง</span></div>
+          <div class="plain-flow-step"><b>4. ทำซ้ำจนนิ่ง</b><span>แยกได้ชัดเจนเป็นกลุ่ม “ซื้อน้อย/จ่ายน้อย” และ “ซื้อบ่อย/จ่ายสูง”</span></div>
+        </div>
+        <div class="memory-box">
+          <span>สรุปใจความสำคัญ</span>
+          <strong>K-Means = “ให้ข้อมูลจัดกลุ่มกันเอง” → เรากำหนดแค่จำนวนกลุ่ม K ส่วนการค้นพบแพทเทิร์นเป็นหน้าที่ของอัลกอริทึม</strong>
+        </div>
+        <p class="plain-note">ชื่อกลุ่ม เช่น “ลูกค้าประจำ” เป็นชื่อที่นักวิเคราะห์ตั้งขึ้นภายหลังการสังเกตสมาชิกใน Cluster; ตัวโมเดลให้เฉพาะหมายเลขกลุ่ม</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- ==================== JAVASCRIPT LOGIC & HOOKS ==================== -->
+  <script>
+    // ---------- Shared UI & Theme Controls ----------
+    const root = document.documentElement;
+    const themeBtn = document.getElementById('themeBtn');
+    const menuBtn = document.getElementById('menuBtn');
+    const drawerBackdrop = document.getElementById('drawerBackdrop');
+    const toast = document.getElementById('toast');
+    let toastTimer;
+
+    // ---------- Accessible Modals with Focus Trap & Restoration ----------
+    let lastModalTrigger = null;
+
+    function handleModalKeyDown(event) {
+      const openModal = document.querySelector('.learn-modal.is-open');
+      if (!openModal) return;
+
+      if (event.key === 'Escape') {
+        closeLearnModal(openModal);
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const focusables = openModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (event.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            event.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            event.preventDefault();
+          }
+        }
+      }
+    }
+
+    function closeLearnModal(modal) {
+      if (!modal) return;
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      document.removeEventListener('keydown', handleModalKeyDown);
+
+      const mainEl = document.querySelector('.main');
+      const mastheadEl = document.querySelector('.masthead');
+      if (mainEl) mainEl.removeAttribute('inert');
+      if (mastheadEl) mastheadEl.removeAttribute('inert');
+
+      if (lastModalTrigger && typeof lastModalTrigger.focus === 'function') {
+        lastModalTrigger.focus();
+      }
+    }
+
+    function openLearnModal(key, trigger) {
+      const modal = document.querySelector(`[data-learn-modal="${key}"]`);
+      if (!modal) return;
+      document.querySelectorAll('.learn-modal.is-open').forEach(closeLearnModal);
+      lastModalTrigger = trigger || null;
+
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+
+      const mainEl = document.querySelector('.main');
+      const mastheadEl = document.querySelector('.masthead');
+      if (mainEl) mainEl.setAttribute('inert', '');
+      if (mastheadEl) mastheadEl.setAttribute('inert', '');
+
+      document.addEventListener('keydown', handleModalKeyDown);
+      requestAnimationFrame(() => {
+        const closeBtn = modal.querySelector('.learn-modal-close');
+        if (closeBtn) closeBtn.focus();
+      });
+    }
+
+    document.querySelectorAll('[data-learn-open]').forEach(btn => {
+      btn.addEventListener('click', () => openLearnModal(btn.dataset.learnOpen, btn));
+    });
+    document.querySelectorAll('[data-learn-close]').forEach(el => {
+      el.addEventListener('click', () => closeLearnModal(el.closest('.learn-modal')));
+    });
+
+    function showToast(message) {
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    // Dynamic Chart Colors reflecting current theme
+    function chartColors() {
+      const s = getComputedStyle(root);
+      const isDark = root.dataset.theme === 'dark';
+      return {
+        bg: s.getPropertyValue('--surface').trim() || (isDark ? '#12151c' : '#ffffff'),
+        grid: s.getPropertyValue('--line').trim() || (isDark ? '#222733' : '#e5e8ec'),
+        text: s.getPropertyValue('--muted').trim() || (isDark ? '#7e899b' : '#737d8c'),
+        strong: isDark ? '#f8fafc' : '#111317',
+        isDark
+      };
+    }
+
+    function baseLayout(xTitle, yTitle) {
+      const c = chartColors();
+      const isMobile = window.innerWidth <= 640;
+      return {
+        paper_bgcolor: c.bg,
+        plot_bgcolor: c.bg,
+        font: { family: 'Inter, ui-sans-serif, system-ui, sans-serif', color: c.text, size: isMobile ? 10 : 11 },
+        margin: isMobile ? { l: 40, r: 16, t: 28, b: 40 } : { l: 52, r: 24, t: 26, b: 48 },
+        autosize: true,
+        hovermode: 'closest',
+        showlegend: true,
+        legend: { orientation: 'h', y: isMobile ? 1.18 : 1.12, x: 0, font: { size: isMobile ? 9 : 10, color: c.text } },
+        xaxis: { title: xTitle, gridcolor: c.grid, zerolinecolor: c.grid, linecolor: c.grid, range: [0, 11] },
+        yaxis: { title: yTitle, gridcolor: c.grid, zerolinecolor: c.grid, linecolor: c.grid, range: [0, 11] }
+      };
+    }
+
+    const plotConfig = { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['lasso2d', 'select2d', 'autoScale2d'] };
+
+    // Debounced Resize Observer
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        ['knnChart', 'regChart', 'kmChart'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && el.data) Plotly.Plots.resize(el);
+        });
+      }, 120);
+    });
+
+    function renderAllCharts() {
+      runKNN(false);
+      runRegression(false);
+      renderKMeans();
+    }
+
+    const savedTheme = localStorage.getItem('ml-lab-theme');
+    if (savedTheme === 'dark') root.dataset.theme = 'dark';
+
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const dark = root.dataset.theme === 'dark';
+        if (dark) delete root.dataset.theme; else root.dataset.theme = 'dark';
+        localStorage.setItem('ml-lab-theme', dark ? 'light' : 'dark');
+        renderAllCharts();
+      });
+    }
+
+    if (menuBtn) {
+      menuBtn.addEventListener('click', () => document.body.classList.toggle('menu-open'));
+    }
+    if (drawerBackdrop) {
+      drawerBackdrop.addEventListener('click', () => document.body.classList.remove('menu-open'));
+    }
+    document.querySelectorAll('#sideNav a, .masthead-nav a').forEach(a => {
+      a.addEventListener('click', () => document.body.classList.remove('menu-open'));
+    });
+
+    // Robust ScrollSpy
+    const navTargets = ['overview', 'knn', 'regression', 'kmeans', 'group']
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+    const mastheadLinks = [...document.querySelectorAll('.masthead-nav a')];
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        mastheadLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+      });
+    }, { rootMargin: '-20% 0px -65% 0px' });
+    navTargets.forEach(s => observer.observe(s));
+
+    // ==================== 1) KNN Classification Logic ====================
+    const knnPoints = [
+      {x:2.0,y:3.0,c:'A'}, {x:2.8,y:4.2,c:'A'}, {x:3.6,y:2.7,c:'A'}, {x:4.1,y:3.7,c:'A'},
+      {x:5.3,y:4.9,c:'A'}, {x:7.1,y:7.2,c:'B'}, {x:8.0,y:8.5,c:'B'}, {x:8.8,y:7.4,c:'B'},
+      {x:9.3,y:9.2,c:'B'}, {x:6.8,y:8.9,c:'B'}
+    ];
+
+    const knnK = document.getElementById('knnK');
+    const knnX = document.getElementById('knnX');
+    const knnY = document.getElementById('knnY');
+
+    function euclidean(a, b) { return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2); }
+
+    function runKNN(notify = true) {
+      const k = Number(knnK.value);
+      const test = { x: Math.max(0, Math.min(11, Number(knnX.value)||0)), y: Math.max(0, Math.min(11, Number(knnY.value)||0)) };
+      knnX.value = test.x; knnY.value = test.y;
+      document.getElementById('knnKValue').textContent = k;
+      document.getElementById('knnXYValue').textContent = `${test.x.toFixed(1)}, ${test.y.toFixed(1)}`;
+
+      const ranked = knnPoints.map((p,i) => ({...p, i, d: euclidean(p,test)})).sort((a,b) => a.d-b.d);
+      const nearest = ranked.slice(0,k);
+      const votes = nearest.reduce((acc,p) => (acc[p.c]=(acc[p.c]||0)+1, acc), {});
+      const pred = (votes.A||0) >= (votes.B||0) ? 'A' : 'B';
+      const winningVotes = votes[pred] || 0;
+
+      document.getElementById('knnPrediction').textContent = `Class ${pred}`;
+      document.getElementById('knnConfidence').textContent = `${winningVotes} / ${k} votes`;
+      document.getElementById('knnNeighborList').innerHTML = nearest.slice(0,4).map((p,i) => `<div class="result-row"><span>#${i+1} · Class ${p.c}</span><b>d = ${p.d.toFixed(2)}</b></div>`).join('') + (k>4 ? `<div class="result-row"><span>และอีก</span><b>${k-4} จุด</b></div>`:'');
+
+      const colors = chartColors();
+      const classA = knnPoints.filter(p=>p.c==='A');
+      const classB = knnPoints.filter(p=>p.c==='B');
+      const traces = [
+        { x: classA.map(p=>p.x), y: classA.map(p=>p.y), mode:'markers', type:'scatter', name:'Class A', marker:{size:12,color:'#2563eb',line:{width:1,color:colors.bg}} },
+        { x: classB.map(p=>p.x), y: classB.map(p=>p.y), mode:'markers', type:'scatter', name:'Class B', marker:{size:12,color:'#ef4444',line:{width:1,color:colors.bg}} },
+        { x: nearest.map(p=>p.x), y: nearest.map(p=>p.y), mode:'markers', type:'scatter', name:`Nearest K=${k}`, marker:{size:22,color:'rgba(0,0,0,0)',line:{width:3,color:'#f59e0b'},symbol:'circle'} },
+        { x:[test.x], y:[test.y], mode:'markers+text', type:'scatter', name:'Test Data', text:[`Pred: ${pred}`], textposition:'top center', textfont:{color:colors.strong, size:11}, marker:{size:18,color:'#f59e0b',symbol:'star',line:{width:2,color:colors.isDark ? '#ffffff' : '#111317'}} }
+      ];
+      const layout = baseLayout('Feature X','Feature Y');
+      layout.uirevision = 'knn';
+      Plotly.react('knnChart', traces, layout, plotConfig);
+      if (notify) showToast(`KNN ทำนายผลเป็น Class ${pred} จาก ${k} เพื่อนบ้าน`);
+    }
+
+    document.getElementById('runKnn').addEventListener('click', () => runKNN(true));
+    knnK.addEventListener('input', () => runKNN(false));
+    [knnX,knnY].forEach(el => el.addEventListener('change', () => runKNN(false)));
+    document.getElementById('randomKnn').addEventListener('click', () => {
+      knnX.value = (1 + Math.random()*9).toFixed(1);
+      knnY.value = (1 + Math.random()*9).toFixed(1);
+      runKNN(true);
+    });
+
+    // ==================== 2) KNN Regression Logic ====================
+    const regDataset = [
+      {w:[178,180,181,183,184], target:185},
+      {w:[181,182,184,185,187], target:188},
+      {w:[184,185,186,187,188], target:189},
+      {w:[187,186,185,184,183], target:182},
+      {w:[179,181,183,184,186], target:187},
+      {w:[190,189,188,187,186], target:185},
+      {w:[182,183,185,186,188], target:189},
+      {w:[176,178,179,181,182], target:184}
+    ];
+    const regK = document.getElementById('regK');
+    const regInputs = [...document.querySelectorAll('.reg-day')];
+    function vectorDistance(a,b){ return Math.sqrt(a.reduce((s,v,i)=>s+(v-b[i])**2,0)); }
+
+    function runRegression(notify = true) {
+      const input = regInputs.map(el => Number(el.value)||0);
+      const k = Number(regK.value);
+      document.getElementById('regKValue').textContent = k;
+      const ranked = regDataset.map((row,i)=>({...row,i,d:vectorDistance(input,row.w)})).sort((a,b)=>a.d-b.d);
+      const near = ranked.slice(0,k);
+      const pred = near.reduce((s,r)=>s+r.target,0)/k;
+      document.getElementById('regPrediction').textContent = pred.toFixed(2);
+      document.getElementById('regInfo').textContent = `K = ${k} · avg target`;
+      document.getElementById('regNeighborTable').innerHTML = near.map((r,i)=>`<tr><td>#${i+1}</td><td>${r.d.toFixed(2)}</td><td>${r.target.toFixed(2)}</td></tr>`).join('');
+
+      const colors = chartColors();
+      const isMobile = window.innerWidth <= 640;
+      const traces = [
+        {x:[1,2,3,4,5],y:input,mode:'lines+markers',type:'scatter',name:'Input window',line:{width:3,color:'#16a34a'},marker:{size:8,color:'#16a34a'}},
+        {x:[6],y:[pred],mode:'markers+text',type:'scatter',name:'Predicted',text:[`Pred ${pred.toFixed(2)}`],textposition:'top center',textfont:{color:colors.strong, size:11},marker:{size:15,color:'#f59e0b',symbol:'diamond',line:{width:2,color:colors.isDark ? '#ffffff' : '#111317'}}}
+      ];
+      near.forEach((r,i)=> traces.push({x:[1,2,3,4,5],y:r.w,mode:'lines',type:'scatter',name:`Neighbor ${i+1}`,line:{width:1.3,dash:'dot',color:colors.isDark ? (i%2===0?'#64748b':'#475569') : (i%2===0?'#94a3b8':'#cbd5e1')},opacity:.75}));
+      const ymin = Math.min(...input,...near.flatMap(r=>r.w),pred)-3;
+      const ymax = Math.max(...input,...near.flatMap(r=>r.w),pred)+3;
+      const layout = {
+        paper_bgcolor: colors.bg, plot_bgcolor: colors.bg,
+        font:{family:'Inter, ui-sans-serif, system-ui, sans-serif',color:colors.text,size:isMobile ? 10 : 11},
+        margin:isMobile ? {l:44,r:16,t:28,b:42} : {l:58,r:24,t:26,b:48},
+        autosize: true,
+        hovermode:'closest',
+        legend:{orientation:'h',y:isMobile ? 1.18 : 1.12,x:0,font:{size:isMobile ? 9 : 10, color:colors.text}},
+        xaxis:{title:'Day',tickvals:[1,2,3,4,5,6],ticktext:['D1','D2','D3','D4','D5','Next'],gridcolor:colors.grid,linecolor:colors.grid},
+        yaxis:{title:'Close Price',range:[ymin,ymax],gridcolor:colors.grid,linecolor:colors.grid},
+        shapes:[{type:'line',x0:5.5,x1:5.5,y0:ymin,y1:ymax,line:{color:colors.grid,dash:'dot'}}],
+        uirevision:'reg'
+      };
+      Plotly.react('regChart', traces, layout, plotConfig);
+      if (notify) showToast(`KNN Regression พยากรณ์วันถัดไป ≈ ${pred.toFixed(2)}`);
+    }
+
+    document.getElementById('runReg').addEventListener('click', () => runRegression(true));
+    regK.addEventListener('input', () => runRegression(false));
+    regInputs.forEach(el => el.addEventListener('change', () => runRegression(false)));
+    document.getElementById('presetReg').addEventListener('click', () => {
+      const presets = [[183,184,185,186,187],[188,187,186,185,184],[179,181,182,184,186],[182,183,185,187,188]];
+      const p = presets[Math.floor(Math.random()*presets.length)];
+      regInputs.forEach((el,i)=>el.value=p[i]);
+      runRegression(true);
+    });
+
+    // ==================== 3) K-Means Clustering Logic ====================
+    const kmData = [
+      [1.7,2.4],[2.2,3.1],[2.7,2.1],[3.1,3.7],[3.6,2.9],
+      [7.1,7.6],[7.8,8.3],[8.5,7.2],[9.1,8.6],[8.8,9.3],
+      [4.6,7.9],[5.2,8.8],[5.8,7.4],[4.9,6.9],[6.1,8.4],
+      [6.6,3.2],[7.3,2.4],[8.1,3.6],[7.8,4.4]
+    ].map((p,i)=>({x:p[0],y:p[1],id:i}));
+
+    let kmCentroids = [];
+    let kmAssignments = [];
+    let kmIteration = 0;
+    let kmLastShift = null;
+    let kmConverged = false;
+    let kmAnimTimer = null;
+
+    const clusterColors = ['#2563eb','#ef4444','#7c3aed','#16a34a'];
+
+    function stopKMAnimation(){
+      if (kmAnimTimer) {
+        clearTimeout(kmAnimTimer);
+        kmAnimTimer = null;
+        const runBtn = document.getElementById('kmRun');
+        if (runBtn) runBtn.textContent = 'Run to converge';
+      }
+    }
+
+    function resetKMeans(notify=false){
+      stopKMAnimation();
+      const k=Number(document.getElementById('kmK').value);
+      document.getElementById('kmKValue').textContent=k;
+      const seedIdx = k===2 ? [0,8] : k===3 ? [0,8,11] : [0,8,11,17];
+      kmCentroids = seedIdx.map(i=>({x:kmData[i].x,y:kmData[i].y}));
+      kmAssignments = new Array(kmData.length).fill(-1);
+      kmIteration=0; kmLastShift=null; kmConverged=false;
+      assignClusters();
+      updateKMStats();
+      renderKMeans();
+      if(notify) showToast(`Reset K-Means ด้วย K = ${k}`);
+    }
+
+    function assignClusters(){
+      kmAssignments = kmData.map(p=>{
+        let best=0,bestD=Infinity;
+        kmCentroids.forEach((c,i)=>{ const d=(p.x-c.x)**2+(p.y-c.y)**2; if(d<bestD){bestD=d;best=i;} });
+        return best;
+      });
+    }
+
+    function kmeansStep(notify=true){
+      if(kmConverged){ if(notify) showToast('K-Means Converged แล้ว — กด Reset เพื่อเริ่มใหม่'); return; }
+      assignClusters();
+      const k=kmCentroids.length;
+      const newC = kmCentroids.map((old,i)=>{
+        const pts=kmData.filter((_,idx)=>kmAssignments[idx]===i);
+        if(!pts.length) return {...old};
+        return {x:pts.reduce((s,p)=>s+p.x,0)/pts.length,y:pts.reduce((s,p)=>s+p.y,0)/pts.length};
+      });
+      kmLastShift = Math.max(...newC.map((c,i)=>Math.sqrt((c.x-kmCentroids[i].x)**2+(c.y-kmCentroids[i].y)**2)));
+      kmCentroids = newC;
+      kmIteration++;
+      assignClusters();
+      kmConverged = kmLastShift < 0.001;
+      updateKMStats();
+      renderKMeans();
+      if(notify) showToast(kmConverged ? `Converged ใน ${kmIteration} iterations` : `Iteration ${kmIteration}: Centroid ถูกอัปเดตแล้ว`);
+    }
+
+    function calculateSSE(){
+      return kmData.reduce((s,p,idx)=>{const c=kmCentroids[kmAssignments[idx]]; return s+(p.x-c.x)**2+(p.y-c.y)**2;},0);
+    }
+
+    function updateKMStats(){
+      document.getElementById('kmStatus').textContent=kmConverged?'Converged':(kmIteration?'Learning':'Ready');
+      document.getElementById('kmIteration').textContent=`Iteration ${kmIteration}`;
+      document.getElementById('kmSSE').textContent=calculateSSE().toFixed(2);
+      document.getElementById('kmShift').textContent=kmLastShift===null?'—':kmLastShift.toFixed(4);
+    }
+
+    function renderKMeans(){
+      const colors=chartColors();
+      const traces=[];
+      for(let i=0;i<kmCentroids.length;i++){
+        const pts=kmData.filter((_,idx)=>kmAssignments[idx]===i);
+        traces.push({x:pts.map(p=>p.x),y:pts.map(p=>p.y),mode:'markers',type:'scatter',name:`Cluster ${i+1}`,marker:{size:12,color:clusterColors[i],line:{width:1,color:colors.bg}}});
+      }
+      traces.push({
+        x:kmCentroids.map(c=>c.x),
+        y:kmCentroids.map(c=>c.y),
+        mode:'markers+text',
+        type:'scatter',
+        name:'Centroids',
+        text:kmCentroids.map((_,i)=>`C${i+1}`),
+        textposition:'top center',
+        textfont:{color:colors.strong, size:12, family:'Inter, ui-sans-serif, sans-serif'},
+        marker:{size:18,color:colors.isDark ? '#ffffff' : '#0f172a',symbol:'x',line:{width:3.5,color:colors.isDark ? '#ffffff' : '#0f172a'}}
+      });
+      const layout=baseLayout('Feature X','Feature Y');
+      layout.uirevision='km';
+      layout.paper_bgcolor=colors.bg; layout.plot_bgcolor=colors.bg;
+      Plotly.react('kmChart',traces,layout,plotConfig);
+    }
+
+    function runKMeansAnimated(){
+      const runBtn = document.getElementById('kmRun');
+      if (kmAnimTimer) {
+        stopKMAnimation();
+        showToast('หยุดการจำลอง K-Means ชั่วคราว');
+        return;
+      }
+      if (kmConverged) {
+        showToast('โมเดล Converged แล้ว — กด Reset เพื่อเริ่มใหม่');
+        return;
+      }
+      if (runBtn) runBtn.textContent = 'Stop';
+
+      function stepLoop(){
+        if (kmConverged || kmIteration >= 25) {
+          stopKMAnimation();
+          showToast(kmConverged ? `K-Means Converged ใน ${kmIteration} iterations` : 'หยุดหลัง 25 iterations');
+          return;
+        }
+        kmeansStep(false);
+        if (!kmConverged && kmIteration < 25) {
+          kmAnimTimer = setTimeout(stepLoop, 320);
+        } else {
+          stopKMAnimation();
+          showToast(`K-Means Converged เรียบร้อยแล้ว (${kmIteration} iterations)`);
+        }
+      }
+      stepLoop();
+    }
+
+    document.getElementById('kmK').addEventListener('input',()=>resetKMeans(false));
+    document.getElementById('kmStep').addEventListener('click',()=>{
+      stopKMAnimation();
+      kmeansStep(true);
+    });
+    document.getElementById('kmRun').addEventListener('click', runKMeansAnimated);
+    document.getElementById('kmReset').addEventListener('click',()=>resetKMeans(true));
+
+    const printBtnEl = document.getElementById('printBtn');
+    if (printBtnEl) printBtnEl.addEventListener('click', () => window.print());
+
+    // ---------- Global sample button ----------
+    const randomAllBtnEl = document.getElementById('randomAllBtn');
+    if (randomAllBtnEl) {
+      randomAllBtnEl.addEventListener('click',()=>{
+        stopKMAnimation();
+        knnX.value=(1+Math.random()*9).toFixed(1);
+        knnY.value=(1+Math.random()*9).toFixed(1);
+        runKNN(false);
+        const presetRegBtn = document.getElementById('presetReg');
+        if (presetRegBtn) presetRegBtn.click();
+        resetKMeans(false);
+        showToast('สุ่มตัวอย่างใหม่ให้ทั้ง 3 Labs แล้ว');
+      });
+    }
+
+    // Initial render
+    runKNN(false);
+    runRegression(false);
+    resetKMeans(false);
+  </script>
+</body>
+</html>
